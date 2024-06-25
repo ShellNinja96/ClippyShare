@@ -9,7 +9,7 @@ void BindAddressToSocket(const int& socketFileDescriptor, const sockaddr_in& soc
 void MakeSocketListen(const int& socketFileDescriptor);
 int AcceptConnection(const int& serverSocket, sockaddr_in& serverSocketAddress);
 void ConnectToSocket(const int& socketFileDescriptor, const sockaddr_in& serverAddress);
-
-
+void SendData(const int& sendingSocketFileDescriptor, const void* sendBuffer, unsigned long& sendBufferLength);
+void ReceiveData(const int& receivingSocketFileDescriptor, void* receiveBuffer, unsigned long& receiveBufferLength);
 
 #endif //LINUX_NETWORKING_H

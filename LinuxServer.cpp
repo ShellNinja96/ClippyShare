@@ -11,9 +11,15 @@ int main() {
     BindAddressToSocket(serverSocket, serverSocketAddress);
     MakeSocketListen(serverSocket);
     std::cout << "Waiting for connection on port " << serverPort << std::endl;
-    int clientSocket = AcceptConnection(serverSocket, serverSocketAddress);
+    int connectedSocket = AcceptConnection(serverSocket, serverSocketAddress);
     std::cout << "Connection established.\n";
-    close(clientSocket);
+
+    char receiveBuffer[1024] = {0};
+    unsigned long receiveBufferSize = sizeof(receiveBuffer);
+    ReceiveData(connectedSocket, receiveBuffer, receiveBufferSize);
+    std::cout << "<- " << receiveBuffer << std::endl;
+
+    close(connectedSocket);
     std::cout << "Connection closed.\n";
     close(serverSocket);
     std::cout << "Server socket closed.\n";
