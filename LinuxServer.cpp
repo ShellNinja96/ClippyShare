@@ -1,6 +1,40 @@
+#include <cstring>
 #include <unistd.h>
 #include "Networking/LinuxNetworking.h"
 #include <iostream>
+#include <thread>
+
+void ReadHostSendData(const int& connectedSocketFileDescriptor) {
+    
+    const char* sendBuffer;
+    std::string message;
+    unsigned long sendBufferLength;
+    
+    while(true) {
+
+        std::cout << "Write a message: ";
+        std::getline(std::cin, message);
+        sendBuffer = message.c_str();
+        sendBufferLength = strlen(sendBuffer);
+        SendData(connectedSocketFileDescriptor, sendBuffer, sendBufferLength);
+        std::cout << "Sent     -> " << sendBuffer << std::endl;
+
+    }
+
+}
+
+void ReceiveDataWriteHost(const int& connectedSocketFileDescriptor) {
+
+    while(true) {
+
+        char receiveBuffer[1024] = {0};
+        unsigned long receiveBufferSize = sizeof(receiveBuffer);
+        ReceiveData(connectedSocketFileDescriptor, receiveBuffer, receiveBufferSize);
+        std::cout << "Received <- " << receiveBuffer << std::endl;
+
+    }
+
+}
 
 int main() {
 
@@ -14,10 +48,8 @@ int main() {
     int connectedSocket = AcceptConnection(serverSocket, serverSocketAddress);
     std::cout << "Connection established.\n";
 
-    char receiveBuffer[1024] = {0};
-    unsigned long receiveBufferSize = sizeof(receiveBuffer);
-    ReceiveData(connectedSocket, receiveBuffer, receiveBufferSize);
-    std::cout << "<- " << receiveBuffer << std::endl;
+    std::thread readSendThread (ReadHostSendData, connectedSocket);
+    while(true) ReceiveDataWriteHost(connectedSocket);
 
     close(connectedSocket);
     std::cout << "Connection closed.\n";

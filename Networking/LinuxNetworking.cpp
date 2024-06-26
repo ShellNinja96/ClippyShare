@@ -1,4 +1,3 @@
-#include <cstring>
 #include <stdexcept>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -28,8 +27,7 @@ void BindAddressToSocket(const int& socketFileDescriptor, const sockaddr_in& soc
 }
 
 void MakeSocketListen(const int& socketFileDescriptor) {
-    if (listen(socketFileDescriptor, 3) < 0)
-        throw std::runtime_error("Failed to change socket status to Listening.");
+    if (listen(socketFileDescriptor, 3) < 0) throw std::runtime_error("Failed to change socket status to Listening.");
 }
 
 int AcceptConnection(const int& serverSocket, sockaddr_in& serverSocketAddress) {
