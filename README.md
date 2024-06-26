@@ -9,6 +9,13 @@ So far only Linux clipboard sharing as been implemented.
 ## WARNING
 Encryption wasn't implemented yet, any content shared over the network is in plain text.
 
+## Dependencies
+### Linux:
+- xsel
+
+### Windows:
+- To be implemented...
+
 ## Compiling
 ### Linux:
 ```
@@ -19,7 +26,7 @@ g++ -o ClippyShare Linux.cpp ./Networking/LinuxNetworking.cpp ./ClipboardUtils/L
 
 ## Usage
 The program can be executed either in 'client' or 'server' mode. To execute the binary 3 arguments must be passed to it in exact order:
-./BinaryFileName [client/server] [serverIPv4] [serverPort]
+./BinaryFileName [mode] [serverIPv4] [serverPort]
 
 For example in the server host you'd run:
 ```
