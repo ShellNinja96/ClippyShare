@@ -12,13 +12,26 @@ Encryption wasn't implemented yet, any content shared over the network is in pla
 ## Compiling
 ### Linux:
 ```
-g++ -o Linux Linux.cpp ./Networking/LinuxNetworking.cpp ./ClipboardUtils/LinuxClipboard.cpp
+g++ -o ClippyShare Linux.cpp ./Networking/LinuxNetworking.cpp ./ClipboardUtils/LinuxClipboard.cpp
 ```
 ### Windows:
 - To be implemented...
+
+## Usage
+The program can be executed either in 'client' or 'server' mode. To execute the binary 3 arguments must be passed to it in exact order:
+./BinaryFileName [client/server] [serverIPv4] [serverPort]
+
+For example in the server host you'd run:
+```
+ClippyShare server 192.168.1.1 4444
+```
+And in the client host:
+```
+ClippyShare.exe client 192.168.1.1 4444
+```
 
 ## Future commits
 - Linux: Some form of encryption;
 - Windows: Client-server communication (Create, Bind, Accept, Connect, Send and Receive functions)
 - Windows: Clipboard utilities (Getters and setters for the clipboard)
-- Windows: Some for of encryption;
+- Windows: Some form of encryption;
