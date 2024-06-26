@@ -11,5 +11,7 @@ int AcceptConnection(const int& serverSocket, sockaddr_in& serverSocketAddress);
 void ConnectToSocket(const int& socketFileDescriptor, const sockaddr_in& serverAddress);
 void SendData(const int& sendingSocketFileDescriptor, const void* sendBuffer, unsigned long& sendBufferLength);
 void ReceiveData(const int& receivingSocketFileDescriptor, void* receiveBuffer, unsigned long& receiveBufferLength);
+void ReadHostSendData(const int& socketFileDescriptor);
+void ReceiveDataWriteHost(const int& socketFileDescriptor);
 
 #endif //LINUX_NETWORKING_H
