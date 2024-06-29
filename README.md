@@ -12,6 +12,7 @@ Encryption wasn't implemented yet, any content shared over the network is in pla
 ## Dependencies
 ### Linux:
 - xsel
+- libssl-dev
 
 ### Windows:
 - To be implemented...
@@ -19,7 +20,7 @@ Encryption wasn't implemented yet, any content shared over the network is in pla
 ## Compiling
 ### Linux:
 ```
-g++ -o ClippyShare Linux.cpp ./Networking/LinuxNetworking.cpp ./ClipboardUtils/LinuxClipboard.cpp
+g++ -o ./ClippyShare ./Linux.cpp ./Networking/LinuxNetworking.cpp ./ClipboardUtils/LinuxClipboard.cpp ./CryptographyUtils/CryptographyUtils.cpp -lcrypto
 ```
 ### Windows:
 - To be implemented...
