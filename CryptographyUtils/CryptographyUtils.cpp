@@ -1,5 +1,7 @@
 #include <openssl/bn.h>
 #include <openssl/rand.h>
+#include <openssl/evp.h>
+#include <openssl/kdf.h>
 #include <stdexcept>
 #include "CryptographyUtils.h"
 
@@ -11,6 +13,7 @@ DiffieHellmanKeys::DiffieHellmanKeys(const unsigned int& bits) : bits(bits) {
     publicA = BN_new();
     secret = BN_new();
     BN_set_word(g, 2); // Set primitive root to 2.
+    cryptoKey = new unsigned char[32];
     if (!ctx || !p || !g || !privateA || !publicA || !secret) {
         throw std::runtime_error("Failed to initialize BIGNUMs in DiffieHellmanKeys struct.");
     }
@@ -23,6 +26,7 @@ DiffieHellmanKeys::~DiffieHellmanKeys() {
     BN_free(publicA);
     BN_free(secret);
     BN_CTX_free(ctx);
+    delete[] cryptoKey;
 }
 
 void DiffieHellmanKeys::generatePrime() {
@@ -69,64 +73,36 @@ const char* DiffieHellmanKeys::getPublic() {
     return BN_bn2hex(publicA);
 }
 
-/*
-#include <iostream>
+void DiffieHellmanKeys::generateCryptoKey() {
+    if (secret == nullptr || BN_is_zero(secret)) throw std::runtime_error("Secret has not been properly initialized or is zero.");
 
-void printBN(const char* name, BIGNUM *bn) {
-    char *str = BN_bn2dec(bn);
-    std::cout << name << ": " << str << std::endl;
-    OPENSSL_free(str);
+    int secretLength = BN_num_bytes(secret);
+    unsigned char* secretBuffer = new unsigned char[secretLength];
+    BN_bn2bin(secret, secretBuffer);
+
+    EVP_PKEY_CTX* pctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, NULL);
+    if (!pctx) {
+        delete[] secretBuffer;
+        throw std::runtime_error("Failed to create EVP_PKEY_CTX for HKDF");
+    }
+
+    EVP_PKEY_derive_init(pctx);
+    EVP_PKEY_CTX_set_hkdf_md(pctx, EVP_sha256());
+    EVP_PKEY_CTX_set1_hkdf_salt(pctx, nullptr, 0);
+    EVP_PKEY_CTX_set1_hkdf_key(pctx, secretBuffer, secretLength);
+    //EVP_PKEY_CTX_add1_hkdf_info(pctx, nullptr, 0);
+
+    size_t keyLen = 32;  // AES-256 key length
+    if (EVP_PKEY_derive(pctx, cryptoKey, &keyLen) <= 0) {
+        EVP_PKEY_CTX_free(pctx);
+        delete[] secretBuffer;
+        throw std::runtime_error("Key derivation failed");
+    }
+
+    EVP_PKEY_CTX_free(pctx);
+    delete[] secretBuffer;
 }
 
-int main() {
-    
-    std::cout << "Initializing Server and Client DH structs\n";
-    DiffieHellmanKeys server(2048), client(2048);
-
-    std::cout << "Generating Server prime\n";
-    server.generatePrime();
-
-    std::cout << "Setting Client prime\n";
-    client.setPrime(server.getPrime());
-
-    std::cout << "Generating Server private\n";
-    server.generatePrivate();
-
-    std::cout << "Generating Server public\n";
-    server.generatePublic();
-
-    std::cout << "Generating Client private\n";
-    client.generatePrivate();
-
-    std::cout << "Generating Client public\n";
-    client.generatePublic();
-
-    std::cout << "Generating Server secret\n";
-    client.generateSecret(server.getPublic());
-
-    std::cout << "Generating Client secret\n";
-    server.generateSecret(client.getPublic());
-
-    printBN("Server Prime (p)", server.p);
-    printBN("Client Prime (p)", client.p);
-    std::cout << std::endl;
-
-    printBN("Server Root Primitive (g)", server.g);
-    printBN("Client Root Primitive (g)", client.g);
-    std::cout << std::endl;
-
-    printBN("Server Private Key (private)", server.privateA);
-    printBN("Client Private Key (private)", client.privateA);
-    std::cout << std::endl;
-
-    printBN("Server Public Key (public)", server.publicA);
-    printBN("Client Public Key (public)", client.publicA);
-    std::cout << std::endl;
-
-    printBN("Server Shared Secret (secret)", server.secret);
-    printBN("Client Shared Secret (secret)", client.secret);
-    std::cout << std::endl;
-    
-    return 0;
+const unsigned char* DiffieHellmanKeys::getCryptoKey() {
+    return cryptoKey;
 }
-*/

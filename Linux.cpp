@@ -118,6 +118,8 @@ void ExchangeDiffieHellman(const std::string& executionMode, DiffieHellmanKeys& 
         diffieHellmanKeys.generateSecret(serverPublic);
 
     }
+    std::cout << "Deriving AES-256 key from secret...\n";
+    diffieHellmanKeys.generateCryptoKey();
 
 }
 
@@ -158,7 +160,6 @@ int main(int argc, char* argv[]) {
 
     DiffieHellmanKeys diffieHellmanKeys(2048);
     ExchangeDiffieHellman(executionMode, diffieHellmanKeys, connectedSocket);
-    std::cout << "Derived shared secret\n";
 
     std::thread getDataSetClipboard (GetDataSetClipboard, connectedSocket);
     GetClipboardSendData(connectedSocket);
