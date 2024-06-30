@@ -1,7 +1,9 @@
+#include <cstring>
 #include <openssl/bn.h>
 #include <openssl/rand.h>
 #include <openssl/evp.h>
 #include <openssl/kdf.h>
+#include <openssl/buffer.h>
 #include <stdexcept>
 #include "CryptographyUtils.h"
 
@@ -106,3 +108,55 @@ void DiffieHellmanKeys::generateCryptoKey() {
 const unsigned char* DiffieHellmanKeys::getCryptoKey() {
     return cryptoKey;
 }
+
+const char* EncodeBase64(const char* input) {
+
+    BIO *bio, *b64;
+    BUF_MEM *bufferPtr;
+
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new(BIO_s_mem());
+    bio = BIO_push(b64, bio);
+
+    // Write the input data to the BIO
+    BIO_write(bio, input, strlen(input));
+    BIO_flush(bio);
+
+    // Get the output from the BIO
+    BIO_get_mem_ptr(bio, &bufferPtr);
+    BIO_set_close(bio, BIO_NOCLOSE);
+
+    // Allocate memory for the encoded data plus a null terminator
+    char* encodedData = (char*)malloc((bufferPtr->length + 1) * sizeof(char));
+    memcpy(encodedData, bufferPtr->data, bufferPtr->length);
+    encodedData[bufferPtr->length] = '\0'; // Null terminator
+
+    // Free the BIO
+    BIO_free_all(bio);
+
+    return encodedData;
+
+}
+
+const char* DecodeBase64(const char* input) {
+
+    BIO *bio, *b64;
+    int decodeLen = strlen(input) * 3 / 4;
+    char* buffer = (char*)malloc((decodeLen + 1) * sizeof(char));
+    memset(buffer, 0, decodeLen + 1);  // Initialize buffer with null terminators
+
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new_mem_buf(input, -1);
+    bio = BIO_push(b64, bio);
+
+    // Decode the input data
+    int length = BIO_read(bio, buffer, strlen(input));
+    buffer[length] = '\0'; // Null terminator
+
+    // Free the BIO
+    BIO_free_all(bio);
+
+    return buffer;
+
+}
+
