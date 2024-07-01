@@ -13,5 +13,6 @@ void SendData(const int& sendingSocketFileDescriptor, const void* sendBuffer, un
 void ReceiveData(const int& receivingSocketFileDescriptor, void* receiveBuffer, unsigned long& receiveBufferLength);
 void ReadHostSendData(const int& socketFileDescriptor);
 void ReceiveDataWriteHost(const int& socketFileDescriptor);
+void CheckSocketBufferSize(int socket);
 
 #endif //LINUX_NETWORKING_H

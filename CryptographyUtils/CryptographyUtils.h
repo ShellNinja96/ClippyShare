@@ -28,9 +28,13 @@ public:
     const unsigned char* getCryptoKey();
 };
 
+/*
 const char* EncodeBase64(const char* input);
 const char* DecodeBase64(const char* input);
+*/
 
+unsigned char* EncodeBase64(const unsigned char* input);
+unsigned char* DecodeBase64(const unsigned char* input);
 
 
 #endif // cryptography_utils_h 

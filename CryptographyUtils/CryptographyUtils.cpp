@@ -109,6 +109,7 @@ const unsigned char* DiffieHellmanKeys::getCryptoKey() {
     return cryptoKey;
 }
 
+/*
 const char* EncodeBase64(const char* input) {
 
     BIO *bio, *b64;
@@ -159,4 +160,49 @@ const char* DecodeBase64(const char* input) {
     return buffer;
 
 }
+*/
 
+unsigned char* EncodeBase64(const unsigned char* input) {
+
+    BIO *bio, *b64;
+    BUF_MEM *bufferPtr;
+
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new(BIO_s_mem());
+    bio = BIO_push(b64, bio);
+
+    BIO_write(bio, input, strlen(reinterpret_cast<const char*>(input)));
+    BIO_flush(bio);
+
+    BIO_get_mem_ptr(bio, &bufferPtr);
+    BIO_set_close(bio, BIO_NOCLOSE);
+
+    unsigned char* encodedData = reinterpret_cast<unsigned char*>(malloc((bufferPtr->length + 1) * sizeof(unsigned char)));
+    memcpy(encodedData, bufferPtr->data, bufferPtr->length);
+    encodedData[bufferPtr->length] = '\0'; // Null terminator
+
+    BIO_free_all(bio);
+
+    return encodedData;
+
+}
+
+unsigned char* DecodeBase64(const unsigned char* input) {
+
+    BIO *bio, *b64;
+    int decodeLen = strlen(reinterpret_cast<const char*>(input)) * 3 / 4;
+    unsigned char* buffer = reinterpret_cast<unsigned char*>(malloc((decodeLen + 1) * sizeof(unsigned char)));
+    memset(buffer, 0, decodeLen + 1);  // Initialize buffer with null terminators
+
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new_mem_buf(input, -1);
+    bio = BIO_push(b64, bio);
+
+    int length = BIO_read(bio, buffer, strlen(reinterpret_cast<const char*>(input)));
+    buffer[length] = '\0'; // Null terminator
+
+    BIO_free_all(bio);
+
+    return buffer;
+
+}

@@ -74,11 +74,33 @@ void ReceiveDataWriteHost(const int& socketFileDescriptor) {
 
     while(true) {
 
-        char receiveBuffer[1024] = {0};
+        char receiveBuffer[87040] = {0};
         unsigned long receiveBufferSize = sizeof(receiveBuffer);
         ReceiveData(socketFileDescriptor, receiveBuffer, receiveBufferSize);
         std::cout << "Received <- " << receiveBuffer << std::endl;
 
+    }
+
+}
+
+void CheckSocketBufferSize(int socket) {
+
+    int sendBufferSize;
+    int recvBufferSize;
+    socklen_t optionLen = sizeof(int);
+
+    // Check send buffer size
+    if (getsockopt(socket, SOL_SOCKET, SO_SNDBUF, &sendBufferSize, &optionLen) == -1) {
+        std::cerr << "Failed to get send buffer size" << std::endl;
+    } else {
+        std::cout << "Send buffer size: " << sendBufferSize << std::endl;
+    }
+
+    // Check receive buffer size
+    if (getsockopt(socket, SOL_SOCKET, SO_RCVBUF, &recvBufferSize, &optionLen) == -1) {
+        std::cerr << "Failed to get receive buffer size" << std::endl;
+    } else {
+        std::cout << "Receive buffer size: " << recvBufferSize << std::endl;
     }
 
 }

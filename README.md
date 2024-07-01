@@ -5,6 +5,7 @@ This program is intended to share UTF-8 clipboard content between 2 hosts on the
 The goal of the project is to be able to share clipboard content between Linux (x11) and Windows hosts.
 The program checks in the hosts in which it is running, if any modification to the clipboard has ocurred, if so, then the content of the clipboard is sent over a TCP socket to the other host.
 So far only Linux clipboard sharing as been implemented.
+As per my testing (linux) it's possible to send 14480 bytes at a time over the TCP socket.
 
 ## WARNING
 Encryption wasn't implemented yet, any content shared over the network is in plain text.

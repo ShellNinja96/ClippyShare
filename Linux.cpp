@@ -9,36 +9,64 @@
 #include "Networking/LinuxNetworking.h"
 #include "ClipboardUtils/LinuxClipboard.h"
 
-void GetClipboardSendData(const int& socketFileDescriptor) {
-    
-    std::string lastClipboardContent;
-    std::string currentClipboardContent;
+void GetClipboardSendData(const int& connectedSocket) {
+
+    unsigned char* lastClipboardContent = nullptr;
+    unsigned char* currentClipboardContent = nullptr;
     const char* sendBuffer;
     unsigned long sendBufferLength;
 
-    while(true) {
+    while (true) {
 
         currentClipboardContent = GetClipboardContent();
-        if (lastClipboardContent != currentClipboardContent) {
-            sendBuffer = currentClipboardContent.c_str();
-            sendBufferLength = strlen(sendBuffer);
-            SendData(socketFileDescriptor, sendBuffer, sendBufferLength);
-            lastClipboardContent = currentClipboardContent;
+
+        if (lastClipboardContent == nullptr || strcmp(reinterpret_cast<const char*>(lastClipboardContent), reinterpret_cast<const char*>(currentClipboardContent)) != 0) {
+
+            unsigned char* encodedClipboard = EncodeBase64(currentClipboardContent);
+            sendBuffer = reinterpret_cast<const char*>(encodedClipboard);
+            sendBufferLength = strlen(sendBuffer) + 1;
+
+            if ((sendBufferLength - 1 ) != 0) { 
+
+                std::cout << "Sending: decoded - " << strlen(reinterpret_cast<const char*>(currentClipboardContent)) << " | encoded: " << (sendBufferLength-1) <<std::endl;
+                SendData(connectedSocket, sendBuffer, sendBufferLength);
+                lastClipboardContent = currentClipboardContent;
+
+            } else {
+                
+                // The clipboard gets seemingly randomly cleared, still looking up the cause, in the meantime this prevents it.
+                if (lastClipboardContent != nullptr) SetClipboardContent(lastClipboardContent);
+            }
+
         }
+
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     }
 
+    if (lastClipboardContent != nullptr) delete[] lastClipboardContent;
+
 }
 
-void GetDataSetClipboard(const int& socketFileDescriptor) {
+void GetDataSetClipboard(const int& connectedSocket) {
 
-    while(true) {
-        char receiveBuffer[4096] = {0};
+    while (true) {
+
+        char receiveBuffer[87040] = {0};
         unsigned long receiveBufferSize = sizeof(receiveBuffer);
-        ReceiveData(socketFileDescriptor, receiveBuffer, receiveBufferSize);
-        std::string receiveBufferString = receiveBuffer;
-        SetClipboardContent(receiveBufferString);
+        ReceiveData(connectedSocket, receiveBuffer, receiveBufferSize);
+
+        if (receiveBufferSize > 0) {
+            const unsigned char* encodedClipboardContent = reinterpret_cast<const unsigned char*>(receiveBuffer);
+            const unsigned char* newClipboardContent = DecodeBase64(encodedClipboardContent);
+            if (strlen(reinterpret_cast<const char*>(newClipboardContent)) != 0) {
+                std::cout << "Setting clipboard with size: " << strlen(reinterpret_cast<const char *>(newClipboardContent)) << std::endl;
+                SetClipboardContent(newClipboardContent);
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
     }
 
 }
@@ -63,7 +91,7 @@ void ExchangeDiffieHellman(const std::string& executionMode, DiffieHellmanKeys& 
         SendData(connectedSocket, serverPrime, serverPrimeLength);
 
         std::cout << "Waiting for OK...\n";
-        char receiveBufferA[4096] = {0};
+        char receiveBufferA[87040] = {0};
         unsigned long receiveBufferSize = sizeof(receiveBufferA);
         ReceiveData(connectedSocket, receiveBufferA, receiveBufferSize);
         std::string ok = receiveBufferA;
@@ -75,7 +103,7 @@ void ExchangeDiffieHellman(const std::string& executionMode, DiffieHellmanKeys& 
         SendData(connectedSocket, serverPublic, serverPublicLength);
 
         std::cout << "Waiting for clients public...\n";
-        char receiveBufferB[4096] = {0};
+        char receiveBufferB[87040] = {0};
         ReceiveData(connectedSocket, receiveBufferB, receiveBufferSize);
         const char* clientPublic = receiveBufferB;
 
@@ -85,7 +113,7 @@ void ExchangeDiffieHellman(const std::string& executionMode, DiffieHellmanKeys& 
     } else {
         
         std::cout << "Waiting for server prime...\n";
-        char receiveBufferA[4096] = {0};
+        char receiveBufferA[87040] = {0};
         unsigned long receiveBufferSize = sizeof(receiveBufferA);
         ReceiveData(connectedSocket, receiveBufferA, receiveBufferSize);
         const char* serverPrime = receiveBufferA;
@@ -96,7 +124,7 @@ void ExchangeDiffieHellman(const std::string& executionMode, DiffieHellmanKeys& 
         SendData(connectedSocket, ok, okLength);
         
         std::cout << "Waiting for server public...\n";
-        char receiveBufferB[4096] = {0};
+        char receiveBufferB[87040] = {0};
         ReceiveData(connectedSocket, receiveBufferB, receiveBufferSize);
         const char* serverPublic = receiveBufferB;
         
@@ -120,6 +148,7 @@ void ExchangeDiffieHellman(const std::string& executionMode, DiffieHellmanKeys& 
     }
     std::cout << "Deriving AES-256 key from secret...\n";
     diffieHellmanKeys.generateCryptoKey();
+    std::cout << "Shared secret and key established\n";
 
 }
 
@@ -134,12 +163,14 @@ int main(int argc, char* argv[]) {
     const char* serverIPv4 = argv[2];
     const unsigned short serverPort = std::stoi(argv[3]);
     
+    std::cout << "Creating socket...\n";
     int socket = CreateIPv4TCPSocket(); 
     sockaddr_in serverSocketAddress = StructIPv4SocketAddress(serverIPv4, serverPort);
     int connectedSocket;
 
     if (executionMode == "client") {
 
+        std::cout << "Connecting with server...\n";
         connectedSocket = socket;
         ConnectToSocket(connectedSocket, serverSocketAddress);
         
@@ -147,6 +178,7 @@ int main(int argc, char* argv[]) {
 
         BindAddressToSocket(socket, serverSocketAddress);
         MakeSocketListen(socket);
+        std::cout << "Waiting for client to connect...\n";
         connectedSocket = AcceptConnection(socket, serverSocketAddress);
 
     } else {
@@ -156,11 +188,14 @@ int main(int argc, char* argv[]) {
         return 1;
 
     }
-    std::cout << "Connection established\n";
+    std::cout << "Connection established!\n";
 
-    DiffieHellmanKeys diffieHellmanKeys(2048);
+    CheckSocketBufferSize(connectedSocket);
+
+    DiffieHellmanKeys diffieHellmanKeys(128);
     ExchangeDiffieHellman(executionMode, diffieHellmanKeys, connectedSocket);
 
+    ClearClipboard();
     std::thread getDataSetClipboard (GetDataSetClipboard, connectedSocket);
     GetClipboardSendData(connectedSocket);
 
