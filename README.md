@@ -1,45 +1,39 @@
-# ClippyShare
-This program is intended to share UTF-8 clipboard content between 2 hosts on the same LAN (a client and a server).
-
-## About the project
-The goal of the project is to be able to share clipboard content between Linux (x11) and Windows hosts.
-The program checks in the hosts in which it is running, if any modification to the clipboard has ocurred, if so, then the content of the clipboard is sent over a TCP socket to the other host.
-So far only Linux clipboard sharing as been implemented.
-
-## WARNING
-Encryption wasn't implemented yet, any content shared over the network is in plain text.
+# ClippyShare 0.9
+A bidirectional UTF-8 clipboard content sharing utility written in C++. Shares clipboard content between two hosts (a client and a server) over a TCP socket. All clipboard content sent over the socket is encrypted using AES-256 ECB mode encryption and encoded in Base64. The AES-256 keys are derived from a Diffie-Hellman key exchange (2048 bit). All cryptographic operations are performed with the OpenSSL library. Prime generation (server-side) might be a bit slow depending on your turing machine, but once it's done, remaining operations should be swift.
 
 ## Dependencies
 ### Linux:
-- xsel
+- xsel 1.2.1
 - libssl-dev
 
 ### Windows:
-- To be implemented...
+- openssl
 
 ## Compiling
 ### Linux:
 ```
-g++ -o ./ClippyShare ./Linux.cpp ./Networking/LinuxNetworking.cpp ./ClipboardUtils/LinuxClipboard.cpp ./CryptographyUtils/CryptographyUtils.cpp -lcrypto
+g++ -o ./clippyshare.bin ./main.cpp ./lib/clipboard.cpp ./lib/networking.cpp ./lib/cryptography.cpp -lcrypto
 ```
 ### Windows:
-- To be implemented...
+```
+g++ -o .\clippyshare.exe .\main.cpp .\lib\clipboard.cpp .\lib\networking.cpp .\lib\cryptography.cpp -lcrypto -lws2_32
+```
 
 ## Usage
-The program can be executed either in 'client' or 'server' mode. To execute the binary 3 arguments must be passed to it in exact order:
-./BinaryFileName [mode] [serverIPv4] [serverPort]
+The program can be executed in either 'client' or 'server' mode. To execute the binary, four arguments must be passed to it in the exact order:
+executionMode[client/server] serverIPv4[0.0.0.0] serverPort[0-65535] verbose[true/false]
 
-For example in the server host you'd run:
+For example, on a Linux server host, you'd run:
 ```
-ClippyShare server 192.168.1.1 4444
+./clippyshare.bin server 192.168.1.100 4444 true
 ```
-And in the client host:
+And on a Windows client host:
 ```
-ClippyShare.exe client 192.168.1.1 4444
+.\clippyshare.exe client 192.168.1.100 4444 true
 ```
 
-## Future commits
-- Linux: Some form of encryption;
-- Windows: Client-server communication (Create, Bind, Accept, Connect, Send and Receive functions)
-- Windows: Clipboard utilities (Getters and setters for the clipboard)
-- Windows: Some form of encryption;
+## Issues
+Feel free to submit any issues you encounter while using this program. Testing is in progress.
+
+## License
+Free and Open Source Software. Do whatever you'd like with it <3
