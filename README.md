@@ -1,5 +1,10 @@
 # ClippyShare 0.9
-A bidirectional UTF-8 clipboard content sharing utility written in C++. Shares clipboard content between two hosts (a client and a server) over a TCP socket. All clipboard content sent over the socket is encrypted using AES-256 ECB mode encryption and encoded in Base64. The AES-256 keys are derived from a Diffie-Hellman key exchange (2048 bit). All cryptographic operations are performed with the OpenSSL library. Prime generation (server-side) might be a bit slow depending on your turing machine, but once it's done, remaining operations should be swift.
+ClippyShare 0.9 is a cross-platform C++ utility designed for bidirectional sharing of UTF-8 clipboard content between two hosts over a TCP socket. This tool employs AES-256 ECB mode encryption for security, with keys derived from a 2048-bit Diffie-Hellman key exchange, ensures that encrypted content is transmitted safely over the network with Base64 encoding. Utilizes the OpenSSL library for cryptographic operations.
+
+## Warnings and Security Concerns
+The current implementation leverages the xsel utility via a system call for Linux clipboard handling, which poses a potential security risk on Linux systems due to possible command injection vulnerabilities. Mitigation efforts are ongoing and will be addressed in future updates.
+
+Do not use this utility on public networks. The current encryption and key exchange mechanisms do not safeguard against man-in-the-middle (MITM) attacks. Plans to implement certificate-based authentication to enhance security are being considered.
 
 ## Dependencies
 ### Linux:
@@ -9,7 +14,7 @@ A bidirectional UTF-8 clipboard content sharing utility written in C++. Shares c
 ### Windows:
 - openssl
 
-## Compiling
+## Compiling Instructions
 ### Linux:
 ```
 g++ -o ./clippyshare.bin ./main.cpp ./lib/clipboard.cpp ./lib/networking.cpp ./lib/cryptography.cpp -lcrypto
@@ -20,7 +25,8 @@ g++ -o .\clippyshare.exe .\main.cpp .\lib\clipboard.cpp .\lib\networking.cpp .\l
 ```
 
 ## Usage
-The program can be executed in either 'client' or 'server' mode. To execute the binary, four arguments must be passed to it in the exact order:
+The program operates in either 'client' or 'server' mode. To execute the binary, four arguments must be passed to it in the exact order:
+
 executionMode[client/server] serverIPv4[0.0.0.0] serverPort[0-65535] verbose[true/false]
 
 For example, on a Linux server host, you'd run:
@@ -33,7 +39,8 @@ And on a Windows client host:
 ```
 
 ## Issues
-Feel free to submit any issues you encounter while using this program. Testing is in progress.
+Users are encouraged to report any issues they encounter. Testing is ongoing, and feedback is welcomed.
 
 ## License
-Free and Open Source Software. Do whatever you'd like with it <3
+This utility is Free and Open Source Software, granting users the freedom to use and modify it as they see fit.
+
