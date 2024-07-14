@@ -1,10 +1,15 @@
 // REQUIREMENTS
 // Windows: OpenSSL
-// Linux:   OpenSSL, xsel 1.2.1 or greater for --trim
+// Linux:   OpenSSL, X11
 
 // COMPILING
 // Windows: g++ -o .\clippyshare.exe .\main.cpp .\lib\clipboard.cpp .\lib\networking.cpp .\lib\cryptography.cpp -lcrypto -lws2_32
-// Linux:   g++ -o ./clippyshare.bin ./main.cpp ./lib/clipboard.cpp ./lib/networking.cpp ./lib/cryptography.cpp -lcrypto
+// Linux:   g++ -o ./clippyshare.bin ./main.cpp ./lib/clipboard.cpp ./lib/networking.cpp ./lib/cryptography.cpp -lcrypto -lX11
+
+// CLEAR REMOVE COMPILE RUN
+// Windows: clear; rm .\clippyshare.exe; g++ -o .\clippyshare.exe .\main.cpp .\lib\clipboard.cpp .\lib\networking.cpp .\lib\cryptography.cpp -lcrypto -lws2_32; .\clippyshare.exe client 192.168.8.154 4444 true
+// Linux: clear && rm ./clippyshare.bin && g++ -o ./clippyshare.bin ./main.cpp ./lib/clipboard.cpp ./lib/networking.cpp ./lib/cryptography.cpp -lcrypto && ./clippyshare.bin server 192.168.8.154 4444 true
+// Linux: while true; do clear; xsel --clipboard --output; sleep 1; done
 
 #include <iostream>
 #include <algorithm>
@@ -22,13 +27,13 @@ std::string rtrim(const std::string& str) {
     return result;
 }
 
-void getClipboardSendData(Socket& mySocket, DiffieHellman& diffie, const bool& verbose) {
+void getClipboardSendData(Socket& mySocket, DiffieHellman& diffie, Clipboard& clipboard, const bool& verbose) {
 
     std::string lastClipboard, currentClipboard, encryptedCliboard, encodedClipboard;
 
     while(true) {
 
-        currentClipboard = getClipboard();
+        currentClipboard = clipboard.get();
 
         if (lastClipboard != currentClipboard) {
 
@@ -48,7 +53,7 @@ void getClipboardSendData(Socket& mySocket, DiffieHellman& diffie, const bool& v
 
 }
 
-void getDataSetClipboard(Socket& mySocket, DiffieHellman& diffie, const bool& verbose) {
+void getDataSetClipboard(Socket& mySocket, DiffieHellman& diffie, Clipboard& clipboard, const bool& verbose) {
 
     std::string recvEncoded, recvEncrypted, recvPlain;
 
@@ -59,7 +64,7 @@ void getDataSetClipboard(Socket& mySocket, DiffieHellman& diffie, const bool& ve
         recvPlain = decryptAES256ECB(recvEncrypted, diffie.getAESKey());
 
         if (verbose) std::cout << "<- " << rtrim(recvPlain) << std::endl;
-        setClipboard(recvPlain);
+        clipboard.set(recvPlain);
 
     }
 
@@ -76,6 +81,7 @@ int main(int argc, char* argv[]) {
 
     Socket mySocket(executionMode, serverIPv4, serverPort, verbose);
     DiffieHellman diffie(2048);
+    Clipboard clipboard;
 
     if (executionMode == "client") {
         
@@ -125,15 +131,26 @@ int main(int argc, char* argv[]) {
     diffie.generateAESKey();
     if (verbose) std::cout << "Diffie-Hellman key exchange complete!\n\n";
 
-    setClipboard("");
+    clipboard.set("");
+    std::thread sendThread(getClipboardSendData, std::ref(mySocket), std::ref(diffie), std::ref(clipboard), std::cref(verbose));
+    std::thread recvThread(getDataSetClipboard, std::ref(mySocket), std::ref(diffie), std::ref(clipboard), std::cref(verbose));
 
-    // cliboard sharing initiated verbose msg
+    #if defined(__linux__)
 
-    std::thread sendThread(getClipboardSendData, std::ref(mySocket), std::ref(diffie), std::cref(verbose));
-    std::thread recvThread(getDataSetClipboard, std::ref(mySocket), std::ref(diffie), std::cref(verbose));
+        std::thread handlerThread([&](){ clipboard.eventHandler(); });
+
+    #endif
+
+    if (verbose) std::cout << "Clipboard sharing session initialized!\n";
 
     sendThread.join();
     recvThread.join();
+
+    #if defined(__linux__)
+
+        handlerThread.join();
+
+    #endif
 
     std::cout << std::endl;
     return 0;

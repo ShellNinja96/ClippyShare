@@ -1,14 +1,12 @@
-# ClippyShare 0.9
-ClippyShare 0.9 is a cross-platform C++ utility designed for bidirectional sharing of UTF-8 clipboard content between two hosts over a TCP socket. This tool employs AES-256 ECB mode encryption for security, with keys derived from a 2048-bit Diffie-Hellman key exchange, ensures that encrypted content is transmitted safely over the network with Base64 encoding. Utilizes the OpenSSL library for cryptographic operations.
+# ClippyShare
+ClippyShare is a cross-platform C++ utility designed for bidirectional sharing of UTF-8 clipboard content between two hosts over a TCP socket. This tool employs AES-256 ECB mode encryption for security, with keys derived from a 2048-bit Diffie-Hellman key exchange, ensures that encrypted content is transmitted safely over the network with Base64 encoding. Utilizes the OpenSSL library for cryptographic operations.
 
 ## Warnings and Security Concerns
-The current implementation leverages the xsel utility via a system call for Linux clipboard handling, which poses a potential security risk on Linux systems due to possible command injection vulnerabilities. Mitigation efforts are ongoing and will be addressed in future updates.
-
 Do not use this utility on public networks. The current encryption and key exchange mechanisms do not safeguard against man-in-the-middle (MITM) attacks. Plans to implement certificate-based authentication to enhance security are being considered.
 
 ## Dependencies
 ### Linux:
-- xsel 1.2.1
+- X11
 - libssl-dev
 
 ### Windows:
@@ -17,7 +15,7 @@ Do not use this utility on public networks. The current encryption and key excha
 ## Compiling Instructions
 ### Linux:
 ```
-g++ -o ./clippyshare.bin ./main.cpp ./lib/clipboard.cpp ./lib/networking.cpp ./lib/cryptography.cpp -lcrypto
+g++ -o ./clippyshare.bin ./main.cpp ./lib/clipboard.cpp ./lib/networking.cpp ./lib/cryptography.cpp -lcrypto -lX11
 ```
 ### Windows:
 ```
@@ -40,6 +38,10 @@ And on a Windows client host:
 
 ## Issues
 Users are encouraged to report any issues they encounter. Testing is ongoing, and feedback is welcomed.
+
+## Release Notes
+### 0.91
+- Linux: Mitigated code injection vulnerability by implementing direct interaction with the X server. No longer dependent on xsel.
 
 ## License
 This utility is Free and Open Source Software, granting users the freedom to use and modify it as they see fit.
